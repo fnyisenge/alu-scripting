@@ -1,43 +1,43 @@
 #!/usr/bin/python3
-"""Queries the Reddit API and
-prints the titles of the first
-10 hot posts listed for a given
-subreddit.
+"""Queries the Reddit API and prints the titles of the first
+10 hot posts listed for a given subreddit.
 """
+
 import requests
+import sys
 
 
 def top_ten(subreddit):
-    """Prints the titles of the first
-    10 hot posts listed for a given
-    subreddit.
+    """Prints the titles of the first 10 hot posts
+    listed for a given subreddit.
     """
-    # Set the Default URL strings
-    base_url = 'https://www.reddit.com'
-    api_uri = '{base}/r/{subreddit}/hot.json'.format(base=base_url,
-                                                     subreddit=subreddit)
+    url = "https://www.reddit.com/r/{}/hot.json".format(subreddit)
+    headers = {"User-Agent": "custom"}
+    params = {"limit": 10}
 
-    # Set an User-Agent
-    user_agent = {'User-Agent': 'Python/requests'}
+    response = requests.get(
+        url,
+        headers=headers,
+        params=params,
+        allow_redirects=False
+    )
 
-    # Set the Query Strings to Request
-    payload = {'limit': '10'}
+    # If subreddit does not exist or request fails
+    if response.status_code != 200:
+        print("None")
+        return
 
-    # Get the Response of the Reddit API
-    res = requests.get(api_uri, headers=user_agent,
-                       params=payload, allow_redirects=False)
+    data = response.json().get("data")
 
-    # Checks if the subreddit is invalid
-    if res.status_code in [302, 404]:
-        print('None')
-    else:
-        res_json = res.json()
+    # If no data or no posts
+    if not data or not data.get("children"):
+        print("None")
+        return
 
-        if res_json.get('data') and res_json.get('data').get('children'):
-            # Get the 10 hot posts of the subreddit
-            hot_posts = res_json.get('data').get('children')
+    for post in data.get("children"):
+        print(post.get("data").get("title"))
 
-            # Print each hot post title
-            for post in hot_posts:
-                if post.get('data') and post.get('data').get('title'):
-                    print(post.get('data').get('title'))
+
+if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        top_ten(sys.argv[1])
